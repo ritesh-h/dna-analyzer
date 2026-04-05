@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DNA Sequence Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f0e;
+    --surface: #151917;
+    --surface2: #1c211f;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8ede9;
+    --text2: #8a9e8e;
+    --text3: #556359;
+    --green: #3ecf8e;
+    --green-dim: #1a5c40;
+    --orange: #f4845f;
+    --orange-dim: #6b2d16;
+    --blue: #5eb8ff;
+    --pink: #e879a0;
+    --yellow: #f5c842;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .page { max-width: 760px; margin: 0 auto; }
+
+  header { margin-bottom: 2.5rem; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem; }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, #1a5c40, #3ecf8e);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+  .subtitle { color: var(--text2); font-size: 14px; margin-top: 4px; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; background: var(--surface); border-radius: var(--radius); padding: 4px; border: 1px solid var(--border); width: fit-content; }
+  .tab { padding: 7px 18px; border-radius: 7px; border: none; background: transparent; cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text2); transition: all 0.18s; }
+  .tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+
+  label.field-label { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; font-weight: 500; }
+
+  textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; padding: 10px 12px;
+    resize: vertical; min-height: 80px; line-height: 1.7; outline: none; transition: border 0.15s;
+  }
+  textarea:focus { border-color: var(--border2); }
+  textarea::placeholder { color: var(--text3); }
+
+  .btn {
+    padding: 9px 22px; border-radius: var(--radius-sm); border: 1px solid var(--green-dim);
+    background: rgba(62,207,142,0.1); color: var(--green); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; margin-top: 10px;
+  }
+  .btn:hover { background: rgba(62,207,142,0.18); border-color: var(--green); }
+  .btn:active { transform: scale(0.98); }
+
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+  .metric { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.9rem 1rem; }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .metric-value { font-size: 24px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--text); }
+  .metric-value.green { color: var(--green); }
+  .metric-value.orange { color: var(--orange); }
+
+  .gc-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .gc-bar { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+
+  .result-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin: 1rem 0 6px; font-weight: 500; }
+
+  .seq-box {
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 12px; line-height: 2;
+    word-break: break-all; max-height: 130px; overflow-y: auto; color: var(--text2);
+  }
+
+  .nA { color: #f4845f; }
+  .nT { color: #5eb8ff; }
+  .nG { color: #3ecf8e; }
+  .nC { color: #e879a0; }
+
+  .orf-item {
+    background: var(--surface2); border-left: 3px solid var(--green);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 14px; margin-bottom: 8px;
+  }
+  .orf-header { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .orf-seq { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2); margin-top: 5px; word-break: break-all; line-height: 1.8; }
+
+  .mut-item {
+    background: var(--surface2); border-left: 3px solid var(--orange);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 14px; margin-bottom: 8px; font-size: 13px;
+  }
+
+  .badge {
+    display: inline-block; font-size: 11px; padding: 2px 9px;
+    border-radius: 999px; font-family: 'DM Mono', monospace;
+  }
+  .badge-green { background: rgba(62,207,142,0.12); color: var(--green); border: 1px solid var(--green-dim); }
+  .badge-orange { background: rgba(244,132,95,0.12); color: var(--orange); border: 1px solid var(--orange-dim); }
+
+  .empty { color: var(--text3); font-size: 13px; padding: 0.25rem 0; font-style: italic; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .legend-item { font-size: 12px; display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+  footer { text-align: center; color: var(--text3); font-size: 12px; margin-top: 3rem; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animated { animation: fadeIn 0.25s ease forwards; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧬</div>
+      <h1>DNA Sequence Analyzer</h1>
+    </div>
+    <p class="subtitle">GC content · ORF detection · Complement · Mutation comparison</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('single', this)">Single sequence</button>
+    <button class="tab" onclick="switchTab('compare', this)">Compare &amp; mutate</button>
+  </div>
+
+  <!-- SINGLE TAB -->
+  <div id="tab-single">
+    <div class="card">
+      <label class="field-label">DNA sequence (A, T, G, C only)</label>
+      <textarea id="seq1" placeholder="e.g. ATGAAACCCGGGTTTATGCTAGCGATGTAA" oninput="liveAnalyze()"></textarea>
+      <button class="btn" onclick="liveAnalyze()">Analyze</button>
+    </div>
+    <div id="single-results"></div>
+  </div>
+
+  <!-- COMPARE TAB -->
+  <div id="tab-compare" style="display:none;">
+    <div class="card">
+      <label class="field-label">Reference sequence</label>
+      <textarea id="ref-seq" placeholder="Reference DNA sequence"></textarea>
+      <label class="field-label" style="margin-top:14px;">Mutant / sample sequence</label>
+      <textarea id="mut-seq" placeholder="Mutant DNA sequence (same length)"></textarea>
+      <button class="btn" onclick="compareMut()">Compare</button>
+    </div>
+    <div id="compare-results"></div>
+  </div>
+
+  <footer>Built with vanilla JS &mdash; no dependencies &mdash; open in any browser</footer>
+</div>
+
+<script>
+function clean(s){ return s.toUpperCase().replace(/[^ATGC]/g,''); }
+
+function switchTab(t, btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-single').style.display = t==='single'?'':'none';
+  document.getElementById('tab-compare').style.display = t==='compare'?'':'none';
+}
+
+function gcContent(seq){
+  if(!seq.length) return 0;
+  return ([...seq].filter(b=>b==='G'||b==='C').length / seq.length * 100);
+}
+
+function complement(seq){
+  return [...seq].map(b=>({A:'T',T:'A',G:'C',C:'G'}[b]||b)).join('');
+}
+
+function revComp(seq){
+  return complement(seq).split('').reverse().join('');
+}
+
+function findORFs(seq){
+  const orfs=[];
+  for(let i=0;i<seq.length-2;i++){
+    if(seq.slice(i,i+3)==='ATG'){
+      for(let j=i+3;j<=seq.length-3;j+=3){
+        const codon=seq.slice(j,j+3);
+        if(codon==='TAA'||codon==='TAG'||codon==='TGA'){
+          if(j+3-i>=15) orfs.push({start:i+1,end:j+3,seq:seq.slice(i,j+3),len:j+3-i});
+          break;
+        }
+      }
+    }
+  }
+  return orfs;
+}
+
+function colorSeq(seq){
+  return [...seq].map(b=>`<span class="n${b}">${b}</span>`).join('');
+}
+
+function liveAnalyze(){
+  const seq = clean(document.getElementById('seq1').value);
+  const el = document.getElementById('single-results');
+  if(seq.length < 3){ el.innerHTML='<p class="empty">Enter a valid DNA sequence to see results.</p>'; return; }
+
+  const gc = gcContent(seq);
+  const at = 100 - gc;
+  const orfs = findORFs(seq);
+  const comp = complement(seq);
+  const rc = revComp(seq);
+  const aCount = [...seq].filter(b=>b==='A').length;
+  const tCount = [...seq].filter(b=>b==='T').length;
+  const gCount = [...seq].filter(b=>b==='G').length;
+  const cCount = [...seq].filter(b=>b==='C').length;
+
+  let html = `<div class="animated">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Length</div><div class="metric-value">${seq.length}<span style="font-size:14px;color:var(--text3)"> bp</span></div></div>
+    <div class="metric"><div class="metric-label">GC content</div><div class="metric-value green">${gc.toFixed(1)}<span style="font-size:14px">%</span></div><div class="gc-bar-wrap"><div class="gc-bar" style="width:${gc}%"></div></div></div>
+    <div class="metric"><div class="metric-label">AT content</div><div class="metric-value">${at.toFixed(1)}<span style="font-size:14px;color:var(--text3)">%</span></div></div>
+    <div class="metric"><div class="metric-label">ORFs found</div><div class="metric-value ${orfs.length>0?'green':''}">${orfs.length}</div></div>
+  </div>
+
+  <div class="card">
+    <div class="result-label">Base composition</div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#f4845f"></span><span class="nA">A</span> &nbsp;${aCount} (${(aCount/seq.length*100).toFixed(1)}%)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#5eb8ff"></span><span class="nT">T</span> &nbsp;${tCount} (${(tCount/seq.length*100).toFixed(1)}%)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#3ecf8e"></span><span class="nG">G</span> &nbsp;${gCount} (${(gCount/seq.length*100).toFixed(1)}%)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#e879a0"></span><span class="nC">C</span> &nbsp;${cCount} (${(cCount/seq.length*100).toFixed(1)}%)</span>
+    </div>
+
+    <div class="result-label">Colored sequence</div>
+    <div class="seq-box">${colorSeq(seq)}</div>
+
+    <div class="result-label">Complement (5'→3')</div>
+    <div class="seq-box" style="color:var(--text2)">${comp}</div>
+
+    <div class="result-label">Reverse complement (3'→5')</div>
+    <div class="seq-box" style="color:var(--text2)">${rc}</div>
+  </div>
+
+  <div class="result-label">Open reading frames (ORFs ≥ 15 bp)</div>`;
+
+  if(orfs.length===0){
+    html += `<p class="empty">No ORFs found. Try a longer sequence containing ATG...stop codon.</p>`;
+  } else {
+    orfs.forEach((o,i)=>{
+      html += `<div class="orf-item animated">
+        <div class="orf-header">ORF ${i+1} <span class="badge badge-green">${o.len} bp</span> <span style="color:var(--text2);font-size:12px;font-family:'DM Mono',monospace">pos ${o.start}–${o.end}</span></div>
+        <div class="orf-seq">${o.seq}</div>
+      </div>`;
+    });
+  }
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function compareMut(){
+  const ref = clean(document.getElementById('ref-seq').value);
+  const mut = clean(document.getElementById('mut-seq').value);
+  const el = document.getElementById('compare-results');
+
+  if(!ref.length||!mut.length){ el.innerHTML='<p class="empty">Enter both sequences.</p>'; return; }
+  if(ref.length!==mut.length){ el.innerHTML='<p class="empty">Both sequences must be the same length. Pad shorter one with matching bases.</p>'; return; }
+
+  let mutations=[];
+  for(let i=0;i<ref.length;i++){
+    if(ref[i]!==mut[i]) mutations.push({pos:i+1,from:ref[i],to:mut[i]});
+  }
+
+  const identity = ((ref.length-mutations.length)/ref.length*100);
+  const gcRef = gcContent(ref);
+  const gcMut = gcContent(mut);
+
+  let html = `<div class="animated">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Length</div><div class="metric-value">${ref.length}<span style="font-size:14px;color:var(--text3)"> bp</span></div></div>
+    <div class="metric"><div class="metric-label">Mutations</div><div class="metric-value ${mutations.length>0?'orange':''}">${mutations.length}</div></div>
+    <div class="metric"><div class="metric-label">Identity</div><div class="metric-value green">${identity.toFixed(1)}<span style="font-size:14px">%</span></div></div>
+    <div class="metric"><div class="metric-label">GC ref / mut</div><div class="metric-value" style="font-size:17px">${gcRef.toFixed(1)}<span style="color:var(--text3);font-size:13px">% / </span>${gcMut.toFixed(1)}<span style="font-size:13px;color:var(--text3)">%</span></div></div>
+  </div>
+  <div class="result-label">Mutations detected</div>`;
+
+  if(mutations.length===0){
+    html += `<p class="empty">No mutations — sequences are identical.</p>`;
+  } else {
+    mutations.forEach(m=>{
+      html += `<div class="mut-item animated">Position <strong style="font-family:'DM Mono',monospace">${m.pos}</strong> &nbsp;<span class="badge badge-orange">${m.from} → ${m.to}</span></div>`;
+    });
+  }
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+liveAnalyze();
+</script>
+</body>
+</html>
